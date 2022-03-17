@@ -1,0 +1,23 @@
+spring:
+
+  profiles:
+    default: local
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jobbed
+    username: postgres
+    password: admin
+    driverClassName: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddlAuto: validate
+    open-in-view: false
+
+  sql:
+    init:
+      mode: never
+
+jwt:
+  signingKeySecret: 2SFJKw1lHGjXAiW7lOWIXNavoBeUrZRD
+  expirationInMilliseconds: 604800000 # 7 days in milliseconds

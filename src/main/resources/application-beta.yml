@@ -1,0 +1,28 @@
+spring:
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+    driverClassName: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddlAuto: validate
+    open-in-view: false
+
+  sql:
+    init:
+      mode: never
+
+jwt:
+  signingKeySecret: ${JWT_SIGNING_KEY_SECRET}
+  expirationInMilliseconds: ${JWT_EXPIRATION_IN_MILLISECONDS}
+
+app:
+  url: ${APP_URL}
+  mail: ${MAIL_USERNAME}
+  sendGrid:
+    apiKey: ${SEND_GRID_API_KEY}
+    template:
+      confirmationAccountId: ${SEND_GRID_CONFIRMATION_ACCOUNT_ID_TEMPLATE}

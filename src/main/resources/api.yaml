@@ -1,0 +1,962 @@
+openapi: 3.0.1
+info:
+  title: Jobbed API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local env
+paths:
+
+  /unauthenticated/users:
+    post:
+      summary: 'Register new user'
+      description: 'Endpoint can be used to register new user with ROLE_EMPLOYEE or ROLE_DIRECTOR'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserDto'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                1 - User name is null:
+                  value:
+                    errorCode: 1
+                2 - User surname is null:
+                  value:
+                    errorCode: 2
+                3 - User email is null:
+                  value:
+                    errorCode: 3
+                4 - User email has wrong format:
+                  value:
+                    errorCode: 4
+                5 - User email is taken:
+                  value:
+                    errorCode: 5
+                6 - User password is null:
+                  value:
+                    errorCode: 6
+                7 - User re password is null:
+                  value:
+                    errorCode: 7
+                8 - User password is not safe:
+                  value:
+                    errorCode: 8
+                9 - User re password do not match password:
+                  value:
+                    errorCode: 9
+                10 - User role is null:
+                  value:
+                    errorCode: 10
+                11 - User role cannot be admin:
+                  value:
+                    errorCode: 11
+                12 - Token not found (This error can appear only for ROLE_EMPLOYEE):
+                  value:
+                    errorCode: 12
+                13 - Token do not match with company (This error can appear only for ROLE_EMPLOYEE):
+                  value:
+                    errorCode: 13
+                14 - Company name is taken (This error can appear only for ROLE_DIRECTOR):
+                  value:
+                    errorCode: 14
+                15 - Company not found (This error can appear only for ROLE_EMPLOYEE):
+                  value:
+                    errorCode: 15
+                16 - Company name is null:
+                  value:
+                    errorCode: 16
+                18 - User phone number is null (This error can appear only for ROLE_EMPLOYEE):
+                  value:
+                    errorCode: 18
+                22 - User phone number code is null (This error can appear only for ROLE_EMPLOYEE):
+                  value:
+                    errorCode: 22
+      tags:
+        - Unauthenticated User
+
+  /unauthenticated/tokens/{code}:
+    get:
+      summary: 'Find token by code. Can be used for validate if token code is correct'
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: array
+            items:
+              type:
+                string
+          description: token code
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/TokenDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                12 - Token not found:
+                  value:
+                    errorCode: 12
+      tags:
+        - Unauthenticated Token
+
+  /authentication:
+    post:
+      summary: 'Authenticate as user'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                20 - User is not enabled:
+                  value:
+                    errorCode: 20
+                21 - User bad credentials:
+                  value:
+                    errorCode: 21
+      tags:
+        - Authentication
+
+  /authenticated/users/me/password:
+    patch:
+      summary: 'Change own password'
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordDto'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                6 - User password is null:
+                  value:
+                    errorCode: 6
+                7 - User re password is null:
+                  value:
+                    7: "user.rePasswordNull"
+                8 - User password is not safe:
+                  value:
+                    8: "user.passwordNotSafe"
+                9 - User re password do not match password:
+                  value:
+                    9: "user.rePasswordNotMatchPassword"
+                17 - user.oldPasswordDoNotMatchWithCurrentPassword:
+                  value:
+                    17: "user.oldPasswordDoNotMatchWithCurrentPassword"
+      tags:
+        - Authenticated User
+
+  /authenticated/users/me:
+    get:
+      summary: 'Find info about yourself'
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserDetailsDto'
+      tags:
+        - Authenticated User
+    put:
+      summary: 'Update own name/surname/phoneNumber'
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDto'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                1 - User name is null:
+                  value:
+                    errorCode: 1
+                2 - User surname is null:
+                  value:
+                    errorCode: 2
+                18 - User phone number is null (This error can appear only for ROLE_EMPLOYEE):
+                  value:
+                    errorCode: 18
+                22 - User phone number code is null (This error can appear only for ROLE_EMPLOYEE):
+                  value:
+                    errorCode: 22
+      tags:
+        - Authenticated User
+
+  /director/company/tokens-with-users:
+    get:
+      summary: 'Find all tokens with users'
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/CompanyUsersDto'
+      tags:
+        - Company Director
+
+  /director/tokens/reset/{code}:
+    patch:
+      summary: 'Generate new token code by token param and return new code'
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+          description: token code
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/TokenCode'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                12 - Token not found:
+                  value:
+                    errorCode: 12
+      tags:
+        - Token Director
+
+  /director/users/{email}:
+    get:
+      summary: 'Find user by email'
+      parameters:
+        - in: path
+          name: email
+          required: true
+          schema:
+            type: string
+          description: user email
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserDetailsDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                19 - User not found:
+                  value:
+                    errorCode: 19
+      tags:
+        - User Director
+
+  /director/users/{id}:
+    get:
+      summary: 'Find user by id'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+          description: user id
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserDetailsDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                19 - User not found:
+                  value:
+                    errorCode: 19
+      tags:
+        - User Director
+
+    put:
+      summary: 'Update user name/surname/phoneNumber/phoneNumberCode by id'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+          description: user id
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDto'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                1 - User name is null:
+                  value:
+                    errorCode: 1
+                2 - User surname is null:
+                  value:
+                    errorCode: 2
+                18 - User phone number is null:
+                  value:
+                    errorCode: 18
+                19 - User not found:
+                  value:
+                    errorCode: 19
+                22 - User phone number code is null:
+                  value:
+                    errorCode: 22
+      tags:
+        - User Director
+
+    delete:
+      summary: 'Delete user by id'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+          description: user id
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                19 - User not found:
+                  value:
+                    errorCode: 19
+      tags:
+        - User Director
+
+  /workplaces:
+    get:
+      summary: 'Find all company workplaces'
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkplaceDto'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+      tags:
+        - Workplace
+
+  /workplaces/{id}:
+    get:
+      summary: 'Find company workplace by id'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+          description: workplace id
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/WorkplaceDto'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                23 - Workplace not found:
+                  value:
+                    errorCode: 23
+      tags:
+        - Workplace
+
+
+  /director/workplaces:
+    post:
+      summary: 'Create new workplace for company'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkplaceDto'
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/IdVO'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                24 - Workplace name is null:
+                  value:
+                    errorCode: 24
+                25 - Workplace name is taken:
+                  value:
+                    errorCode: 25
+                26 - Workplace address is null:
+                  value:
+                    errorCode: 26
+                27 - Workplace description is null:
+                  value:
+                    errorCode: 27
+                28 - Workplace location is null:
+                  value:
+                    errorCode: 28
+                29 - Workplace latitude cannot be zero:
+                  value:
+                    errorCode: 29
+                30 - Workplace longitude cannot be zero:
+                  value:
+                    errorCode: 30
+      tags:
+        - Workplace Director
+
+  /director/workplaces/{id}:
+    put:
+      summary: 'Update workplace name/description by id'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+          description: workplace id
+      security:
+        - BearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkplaceDto'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                24 - Workplace name is null:
+                  value:
+                    errorCode: 24
+                25 - Workplace name is taken:
+                  value:
+                    errorCode: 25
+                27 - Workplace description is null:
+                  value:
+                    errorCode: 27
+                23 - Workplace not found:
+                  value:
+                    errorCode: 23
+      tags:
+        - Workplace Director
+
+    delete:
+      summary: 'Delete workplace by id'
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+          description: workplace id
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                23 - Workplace not found:
+                  value:
+                    errorCode: 23
+      tags:
+        - Workplace Director
+
+  /comments/{relationId}:
+    get:
+      summary: 'Find all comments by relationId for provided type of comment'
+      parameters:
+        - in: path
+          name: relationId
+          required: true
+          schema:
+            type: number
+          description: relation id, for example workplaceId if provided comment type is WORKPLACE
+        - in: query
+          name: type
+          required: true
+          schema:
+            type: string
+            enum: [ WORKPLACE ]
+          description: comment type
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            example: 08/03/2022
+          description: date in format dd/mm/yyyy
+      security:
+        - BearerAuth: [ ]
+      responses:
+        '200':
+          description: Success
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommentDto'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+      tags:
+        - Comment
+
+  /comments/:
+    post:
+      summary: 'Create new comment'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentDto'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                31 - Comment message is null:
+                  value:
+                    errorCode: 31
+                23 - Workplace not found:
+                  value:
+                    errorCode: 23
+      tags:
+        - Comment
+
+
+components:
+  schemas:
+
+    Pagination:
+      title: Pagination
+      type: object
+      properties:
+        pageNumber:
+          title: Current Page number
+          type: number
+          example: 1
+        totalElements:
+          title: Total elements
+          type: number
+          example: 40
+        totalPages:
+          title: Total number of pages
+          type: number
+          example: 2
+        pageSize:
+          title: Number of max elements in current page
+          type: number
+          example: 20
+
+    AuthenticationRequest:
+      title: Authentication request
+      type: object
+      required:
+        - required
+      properties:
+        email:
+          type: string
+          description: Provide email
+          example: 'john.doe@mail.com'
+        password:
+          type: string
+          example: '12345!aA'
+
+    AuthenticationResponse:
+      title: Authentication response
+      type: object
+      required:
+        - required
+      properties:
+        jwt:
+          type: string
+          description: JWT
+          example: 'eyJhbGciOiJIUzI1NiJ9....'
+
+    CreateUserDto:
+      title: Create user dto
+      type: object
+      required:
+        - name
+        - surname
+        - email
+        - phoneNumber
+        - phoneNumberCode
+        - password
+        - rePassword
+        - tokenCode
+        - companyName
+        - roleType
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        email:
+          type: string
+        phoneNumber:
+          type: string
+          description: REQUIRED ONLY FOR ROLE_EMPLOYEE
+        phoneNumberCode:
+          type: string
+          description: REQUIRED ONLY FOR ROLE_EMPLOYEE
+        password:
+          type: string
+        rePassword:
+          type: string
+        companyName:
+          type: string
+        tokenCode:
+          type: string
+          description: REQUIRED ONLY FOR ROLE_EMPLOYEE
+        roleType:
+          type: string
+          example: ROLE_DIRECTOR / ROLE_EMPLOYEE
+
+    TokenDto:
+      title: Token dto
+      type: object
+      properties:
+        code:
+          type: string
+          example: '123456'
+        roleType:
+          type: string
+          example: 'ROLE_EMPLOYEE'
+        companynName:
+          type: string
+          example: 'Company XYZ'
+
+    UpdateUserDto:
+      title: Update user dto
+      type: object
+      required:
+        - name
+        - surname
+        - phoneNumber
+        - phoneNumberCode
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        phoneNumber:
+          type: string
+        phoneNumberCode:
+          type: string
+
+    UpdatePasswordDto:
+      title: Update password dto
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+        - reNewPassword
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+        reNewPassword:
+          type: string
+
+    UserDto:
+      title: User dto
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        surname:
+          type: string
+        isEnabled:
+          type: boolean
+
+    UserDetailsDto:
+      title: User details dto
+      type: object
+      properties:
+        id:
+          type: number
+        createdDate:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        email:
+          type: string
+        phoneNumber:
+          type: string
+        phoneNumberCode:
+          type: string
+        companyName:
+          type: string
+        isEnabled:
+          type: boolean
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleDto'
+
+    RoleDto:
+      title: Role
+      type: object
+      properties:
+        id:
+          type: number
+        role:
+          type: string
+
+    CompanyUsersDto:
+      title: Company tokens with users
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenDto'
+        users:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserDto'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+
+    TokenCode:
+      title: Token code
+      type: object
+      properties:
+        code:
+          type: string
+
+    WorkplaceDto:
+      title: Workplace dto
+      type: object
+      properties:
+        id:
+          type: number
+        createdDate:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        description:
+          type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              example: 10.1
+            longitude:
+              type: number
+              example: 10.1
+        companyName:
+          type: string
+
+    CreateWorkplaceDto:
+      title: Create workplace dto
+      type: object
+      required:
+        - name
+        - address
+        - description
+        - location
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        description:
+          type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              example: 10.1
+            longitude:
+              type: number
+              example: 10.1
+
+    UpdateWorkplaceDto:
+      title: Update workplace dto
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    CreateCommentDto:
+      title: Create comment dto
+      type: object
+      required:
+        - message
+        - type
+        - relationId
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+          enum: [ WORKPLACE ]
+        relationId:
+          type: number
+          description: id of provided relation type, for example workplaceId if type is WORKPLACE
+
+    CommentDto:
+      title: Comment dto
+      type: object
+      properties:
+        id:
+          type: number
+        createdDate:
+          type: string
+        message:
+          type: string
+        author:
+          type: string
+          example: john.doe@mail.com
+
+    IdVO:
+      title: Id VO
+      type: object
+      description: Value object which contains id field
+      properties:
+        id:
+          type: number
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+tags:
+  - name: Unauthenticated User
+  - name: Unauthenticated Token
+  - name: Authentication
+  - name: Authenticated User
+  - name: Company Director
+  - name: Token Director
+  - name: User Director
+  - name: Workplace
+  - name: Workplace Director
+  - name: Comment
